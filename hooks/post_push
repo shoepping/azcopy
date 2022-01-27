@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+
+IMAGE_TAG=`date -u +"%y.%m.%d"`
+
+docker tag ${IMAGE_NAME} ${DOCKER_REPO}:${IMAGE_TAG}
+docker push ${DOCKER_REPO}:${IMAGE_TAG}
