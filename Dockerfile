@@ -5,8 +5,13 @@ RUN wget https://aka.ms/downloadazcopy-v10-linux \
     && cp ./azcopy_linux_amd64_*/azcopy /usr/bin/
 
 FROM debian:bookworm as release
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates xz-utils file \
     && update-ca-certificates
-WORKDIR /home/logs
+WORKDIR /home
+RUN mkdir logs volume
 COPY --from=build  /usr/bin/azcopy /usr/bin
-CMD sleep infinity
+COPY script.sh /home
+RUN chmod +x script.sh
+ENTRYPOINT ["/home/script.sh"]
+CMD ["true"]
+# CMD sleep infinity
