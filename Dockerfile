@@ -12,6 +12,6 @@ RUN mkdir logs volume
 COPY --from=build  /usr/bin/azcopy /usr/bin
 COPY script.sh /home
 RUN chmod +x script.sh
-ENTRYPOINT ["/home/script.sh"]
-CMD ["true"]
+# ENTRYPOINT ["/home/script.sh"]
+CMD ["/home/script.sh"]
 # CMD sleep infinity
