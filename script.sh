@@ -17,6 +17,9 @@ do
        cp $filename /home/volume/$short_name.json
     fi
   done
+  echo "***********Delete files older than 2 days***********"
+  echo ""
   find /home/logs -name "*$day_before_yesterday*" -exec rm -f {} \;
+  find /home/volume -mtime +2 -exec rm {} \;
   sleep 5
 done
