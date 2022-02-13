@@ -20,6 +20,6 @@ do
   echo "***********Delete files older than 2 days***********"
   echo ""
   find /home/logs -name "*$day_before_yesterday*" -exec rm -f {} \;
-  find /home/volume/ -type f -mtime +2 -delete;
+  find /home/volume -name "*$day_before_yesterday*" -exec rm -f {} \;
   sleep 5
 done
