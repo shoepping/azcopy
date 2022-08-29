@@ -7,7 +7,7 @@ do
   day_before_yesterday=`date -d '-2 day' +%Y%m%d`
   yesterday=`date -d '-1 day' +%Y%m%d`
   today=`date +%Y%m%d`
-#  azcopy cp $1 "/home/logs" --include-regex ${yesterday} --recursive --overwrite=false
+  azcopy cp $1 "/home/logs" --include-regex ${yesterday} --recursive --overwrite=false
   azcopy cp $1 "/home/logs" --include-regex ${today} --recursive --overwrite=false
   for filename in /home/logs/*; do
     if [[ $(file --mime-encoding -b $filename) = binary ]]; then
@@ -15,7 +15,7 @@ do
        unxz $filename.xz
        short_name=$( echo "$filename" | cut -d\/ -f4 )
        cp $filename /home/volume/$short_name.json
-    elif [[ condition ]]; then
+    else
        short_name=$( echo "$filename" | cut -d\/ -f4 )
        cp $filename /home/volume/$short_name.json
     fi
