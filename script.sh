@@ -1,29 +1,71 @@
 #!/bin/bash
 #set -x
+
+URL=$1
+
+AZ_COPY_SOURCE_DIR=${AZ_COPY_SOURCE_DIR:-"/home/logs"}
+AZ_COPY_TARGET_DIR=${AZ_COPY_TARGET_DIR:-"/home/volume"}
+AZ_COPY_SLEEP_TIME=${AZ_COPY_SLEEP_TIME:-5}
+AZ_COPY_DELETE_SOURCE_FILES_OLDER_THAN_MINS=${AZ_COPY_DELETE_SOURCE_FILES_OLDER_THAN_MINS:-1440}
+AZ_COPY_DELETE_TARGET_FILES_OLDER_THAN_MINS=${AZ_COPY_DELETE_TARGET_FILES_OLDER_THAN_MINS:-2880}
+
+echo "Starting AZCOPY"
+echo "AZ COPY URL: ${URL}"
+echo "AZ_COPY_SOURCE_DIR: ${AZ_COPY_SOURCE_DIR}"
+echo "AZ_COPY_TARGET_DIR: ${AZ_COPY_TARGET_DIR}"
+echo "AZ_COPY_SLEEP_TIME: ${AZ_COPY_SLEEP_TIME}"
+echo "AZ_COPY_DELETE_SOURCE_FILES_OLDER_THAN_MINS: ${AZ_COPY_DELETE_SOURCE_FILES_OLDER_THAN_MINS}"
+echo "AZ_COPY_DELETE_TARGET_FILES_OLDER_THAN_MINS: ${AZ_COPY_DELETE_TARGET_FILES_OLDER_THAN_MINS}"
+
 while true
 do
   echo "***********Start copy last files***********"
+  now=$(date "+%Y-%m-%d %H:%M %S")
+  echo "$now"
   echo ""
-  day_before_yesterday=`date -d '-2 day' +%Y%m%d`
-  yesterday=`date -d '-1 day' +%Y%m%d`
-  today=`date +%Y%m%d`
-#  azcopy cp $1 "/home/logs" --include-regex ${yesterday} --recursive --overwrite=false
-  azcopy cp $1 "/home/logs" --include-regex ${today} --recursive --overwrite=false
-  for filename in /home/logs/*; do
-    if [[ $(file --mime-encoding -b $filename) = binary ]]; then
-       mv $filename $filename.xz
-       unxz $filename.xz
-       short_name=$( echo "$filename" | cut -d\/ -f4 )
-       cp $filename /home/volume/$short_name.json
+
+  today=$(date +%Y%m%d)
+
+  # Copy the logs into the using the given URL as parameter 1
+  echo "Copying files to $AZ_COPY_SOURCE_DIR with regex pattern $today"
+  #azcopy sync "$URL" "$AZ_COPY_SOURCE_DIR" --include-regex "${today}" --recursive
+  azcopy cp "$URL" "$AZ_COPY_SOURCE_DIR" --include-regex "${today}" --recursive --overwrite=false
+
+  count=0
+  find "$AZ_COPY_SOURCE_DIR" -type f -print0 | while IFS= read -r -d '' filename
+  do
+    count=$((count+1))
+    file_encoding=$(file --mime-encoding -b "$filename")
+    short_name=$(basename "$filename")
+    echo "$count. $short_name has $file_encoding file encoding. Full path $filename"
+    if [[ $(file --mime-encoding -b "$filename") = binary ]]; then
+       if [ ! -f "$AZ_COPY_TARGET_DIR/$short_name.json" ] ; then
+         echo "Binary encoded file. Moving ${filename} to ${filename}.xz and copying"
+         mv "$filename" "$filename".xz
+         unxz "$filename".xz
+         cp "$filename" "$AZ_COPY_TARGET_DIR"/"$short_name".json
+       fi
     else
-       short_name=$( echo "$filename" | cut -d\/ -f4 )
-       cp $filename /home/volume/$short_name.json
+       if [ ! -f "$AZ_COPY_TARGET_DIR"/"$short_name".json ] ; then
+         echo "Copying ${filename} to ${AZ_COPY_TARGET_DIR}/${short_name}.json and copying"
+         cp "$filename" "$AZ_COPY_TARGET_DIR"/"$short_name".json
+       fi
     fi
   done
+
   echo "***********Delete files older than 2 days***********"
   echo ""
-  find /home/logs -name "*$day_before_yesterday*" -exec rm -f {} \;
-  find /home/logs -name "*$yesterday*" -exec rm -f {} \;
-  find /home/volume -name "*$day_before_yesterday*" -exec rm -f {} \;
-  sleep 5
+  echo "Finding source files in ${AZ_COPY_SOURCE_DIR} older than ${AZ_COPY_DELETE_SOURCE_FILES_OLDER_THAN_MINS} minutes"
+  find "$AZ_COPY_SOURCE_DIR" -type f -mmin +"$AZ_COPY_DELETE_SOURCE_FILES_OLDER_THAN_MINS" -exec rm -f {} \;
+  echo "Finding target files in ${AZ_COPY_TARGET_DIR} older than ${AZ_COPY_DELETE_TARGET_FILES_OLDER_THAN_MINS} minutes"
+  find "$AZ_COPY_TARGET_DIR" -type f -mmin +"$AZ_COPY_DELETE_TARGET_FILES_OLDER_THAN_MINS" -exec rm -f {} \;
+
+  echo "List jobs:"
+  azcopy jobs list
+  wait
+  echo "Deleting old azcopy jobe.."
+  azcopy jobs clean 
+
+  echo "Done. Sleeping for $AZ_COPY_SLEEP_TIME seconds"
+  sleep "$AZ_COPY_SLEEP_TIME"
 done
