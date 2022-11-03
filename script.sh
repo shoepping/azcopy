@@ -32,7 +32,7 @@ do
   azcopy cp "$URL" "$AZ_COPY_SOURCE_DIR" --include-regex "${today}" --recursive --overwrite=false
 
   count=0
-  find "$AZ_COPY_SOURCE_DIR" -type f -print0 | while IFS= read -r -d '' filename
+  find "$AZ_COPY_SOURCE_DIR" ! -name ".azDownload*" -type f -print0 | while IFS= read -r -d '' filename
   do
     count=$((count+1))
     file_encoding=$(file --mime-encoding -b "$filename")
@@ -64,7 +64,7 @@ do
   azcopy jobs list
   wait
   echo "Deleting old azcopy jobe.."
-  azcopy jobs clean 
+  azcopy jobs clean
 
   echo "Done. Sleeping for $AZ_COPY_SLEEP_TIME seconds"
   sleep "$AZ_COPY_SLEEP_TIME"
