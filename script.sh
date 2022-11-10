@@ -29,7 +29,7 @@ do
   # Copy the logs into the using the given URL as parameter 1
   echo "Copying files to $AZ_COPY_SOURCE_DIR with regex pattern $today"
   #azcopy sync "$URL" "$AZ_COPY_SOURCE_DIR" --include-regex "${today}" --recursive
-  azcopy cp "$URL" "$AZ_COPY_SOURCE_DIR" --include-regex "${today}" --recursive --overwrite=false
+  azcopy cp "$URL" "$AZ_COPY_SOURCE_DIR" --include-regex "${today}" --recursive --overwrite=true
 
   count=0
   find "$AZ_COPY_SOURCE_DIR" ! -name ".azDownload*" -type f -print0 | while IFS= read -r -d '' filename
