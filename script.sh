@@ -50,6 +50,8 @@ do
          echo "Copying ${filename} to ${AZ_COPY_TARGET_DIR}/${short_name}.json and copying"
          cp "$filename" "$AZ_COPY_TARGET_DIR"/"$short_name".json
        fi
+         echo "File exists. Updating ${AZ_COPY_TARGET_DIR}/${short_name}.json"
+         cp "$filename" "$AZ_COPY_TARGET_DIR"/"$short_name".json
     fi
   done
 
